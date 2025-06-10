@@ -1,7 +1,8 @@
 import logging
 import io
-import olefile  
+import olefile
 from parsers.email_parser import parse_email
+from utils.rtf_converter import rtf_to_text
 
 logger = logging.getLogger(__name__)
 
@@ -89,11 +90,24 @@ def convert_msg_to_eml(ole):
     
     # Extract body
     body = ""
+    content_type = "text/plain; charset=utf-8"
     if ole.exists('__substg1.0_1000001E'):  # Plain text body
         body = ole.openstream('__substg1.0_1000001E').read().decode('utf-8', errors='replace')
     elif ole.exists('__substg1.0_1013001E'):  # HTML body
         body = ole.openstream('__substg1.0_1013001E').read().decode('utf-8', errors='replace')
-        eml_parts.append("Content-Type: text/html; charset=utf-8")
+        content_type = "text/html; charset=utf-8"
+    elif ole.exists('__substg1.0_10130102'):  # Alternate HTML body
+        try:
+            body = ole.openstream('__substg1.0_10130102').read().decode('utf-8', errors='replace')
+            content_type = "text/html; charset=utf-8"
+        except Exception as e:
+            logger.warning(f"Failed to decode alternate HTML body: {e}")
+    elif ole.exists('__substg1.0_10090102'):  # RTF body
+        rtf_data = ole.openstream('__substg1.0_10090102').read()
+        body = rtf_to_text(rtf_data)
+
+    if 'html' in content_type:
+        eml_parts.append(f"Content-Type: {content_type}")
     
     # Add body
     eml_parts.append("")  # Empty line separates headers from body
