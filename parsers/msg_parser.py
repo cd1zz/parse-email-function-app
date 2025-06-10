@@ -5,17 +5,22 @@ from parsers.email_parser import parse_email
 
 logger = logging.getLogger(__name__)
 
-def parse_msg(msg_content, max_depth=10):
+def parse_msg(msg_content, max_depth=10, depth=0, container_path=None):
     """
     Parse an Outlook .msg file and extract email information.
     
     Args:
         msg_content (bytes): Content of the .msg file
         max_depth (int): Maximum recursion depth for nested emails
+        depth (int): Current recursion depth
+        container_path (list): Path of containers leading to this .msg
         
     Returns:
         dict: Parsed email data
     """
+    if container_path is None:
+        container_path = []
+
     logger.debug("Parsing .msg file")
     
     try:
@@ -29,7 +34,12 @@ def parse_msg(msg_content, max_depth=10):
         eml_content = convert_msg_to_eml(ole)
         
         # Use the main email parser to parse the converted EML content
-        parsed_data = parse_email(eml_content, max_depth=max_depth)
+        parsed_data = parse_email(
+            eml_content,
+            depth=depth,
+            max_depth=max_depth,
+            container_path=container_path,
+        )
         
         # Close the OLE file
         ole.close()
