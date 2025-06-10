@@ -1,0 +1,29 @@
+# Core Azure Functions
+azure-functions
+
+# Email parsing libraries
+tnefparse>=1.4.0
+olefile
+extract-msg>=0.30.0
+email-validator>=1.1.2
+python-magic>=0.4.18
+
+# Document processing
+pdfminer.six<20210820  # Pinned to older version for compatibility
+cryptography<37.0.0    # Pinned to avoid GLIBC 2.33 dependency
+
+# Word document processing
+docx2txt>=0.8
+python-docx>=0.8.11
+
+# Excel processing
+pandas
+openpyxl
+xlrd
+
+# Web and HTML processing
+requests>=2.25.0
+beautifulsoup4>=4.9.3
+
+# Templates
+jinja2>=3.0.0
