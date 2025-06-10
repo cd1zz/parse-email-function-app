@@ -150,7 +150,12 @@ def parse_email(
                         elif filename.lower().endswith('.msg'):
                             # Import here to avoid circular dependency
                             from parsers.msg_parser import parse_msg
-                            embedded_email = parse_msg(attachment_data, max_depth)
+                            embedded_email = parse_msg(
+                                attachment_data,
+                                max_depth=max_depth,
+                                depth=depth + 1,
+                                container_path=container_path,
+                            )
                         
                         if embedded_email and "error" not in embedded_email:
                             extracted_email_found = True
