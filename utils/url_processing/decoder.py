@@ -127,8 +127,8 @@ class UrlDecoder:
                 # Only decode if it looks like quoted-printable
                 if re.search(r'=[0-9A-F]{2}', text):
                     encoded_text = text.encode('utf-8', errors='replace')
-                    decoded_text = quopri.decode(encoded_text)
-                    text = decoded_text.decode('utf-8', errors='replace')
+                    decoded_bytes = quopri.decodestring(encoded_text)
+                    text = decoded_bytes.decode('utf-8', errors='replace')
             
             return text
         except Exception as e:
