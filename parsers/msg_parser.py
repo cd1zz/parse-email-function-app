@@ -6,7 +6,7 @@ from utils.rtf_converter import rtf_to_text
 
 logger = logging.getLogger(__name__)
 
-def parse_msg(msg_content, max_depth=10, depth=0, container_path=None):
+def parse_msg(msg_content, max_depth=10, depth=0, container_path=None, stop_recursion=False):
     """
     Parse an Outlook .msg file and extract email information.
     
@@ -40,6 +40,7 @@ def parse_msg(msg_content, max_depth=10, depth=0, container_path=None):
             depth=depth,
             max_depth=max_depth,
             container_path=container_path,
+            stop_recursion=stop_recursion,
         )
         
         # Close the OLE file

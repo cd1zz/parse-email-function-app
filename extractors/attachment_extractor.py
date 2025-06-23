@@ -7,7 +7,7 @@ from utils.url_processing import UrlExtractor
 
 logger = logging.getLogger(__name__)
 
-def extract_attachments(msg, depth=0, max_depth=10, container_path=None):
+def extract_attachments(msg, depth=0, max_depth=10, container_path=None, stop_recursion=False):
     """
     Extract attachments from an email message.
     Enhanced to handle TNEF and message/rfc822 formats better.
@@ -17,6 +17,7 @@ def extract_attachments(msg, depth=0, max_depth=10, container_path=None):
         depth (int): Current recursion depth
         max_depth (int): Maximum recursion depth
         container_path (list): Path of containers
+        stop_recursion (bool): If True, do not recursively parse embedded emails
         
     Returns:
         list: List of attachment information dictionaries
@@ -58,7 +59,9 @@ def extract_attachments(msg, depth=0, max_depth=10, container_path=None):
                         from tnefparse import TNEF
                         tnef_data = part.get_payload(decode=True)
                         if tnef_data:
-                            tnef_attachments = process_tnef_attachment(tnef_data, depth, max_depth, container_path)
+                            tnef_attachments = process_tnef_attachment(
+                                tnef_data, depth, max_depth, container_path, stop_recursion
+                            )
                             if tnef_attachments:
                                 attachments.extend(tnef_attachments)
                     except ImportError:
@@ -86,7 +89,7 @@ def extract_attachments(msg, depth=0, max_depth=10, container_path=None):
         logger.debug(traceback.format_exc())
         return attachments
 
-def process_tnef_attachment(tnef_data, depth, max_depth, container_path):
+def process_tnef_attachment(tnef_data, depth, max_depth, container_path, stop_recursion=False):
     """
     Process TNEF attachment data.
     
@@ -95,6 +98,7 @@ def process_tnef_attachment(tnef_data, depth, max_depth, container_path):
         depth (int): Current recursion depth
         max_depth (int): Maximum recursion depth
         container_path (list): Path of containers
+        stop_recursion (bool): If True, do not recursively parse embedded emails
         
     Returns:
         list: List of attachment information dictionaries
@@ -121,7 +125,7 @@ def process_tnef_attachment(tnef_data, depth, max_depth, container_path):
                 
                 if attachment_name.lower() == "message.rfc822" or attachment.mime_type == "message/rfc822":
                     is_email = True
-                    if depth < max_depth:
+                    if not stop_recursion and depth < max_depth:
                         logger.debug(f"Found embedded email in TNEF attachment, recursively parsing at depth {depth+1}")
                         # Import here to avoid circular import
                         from parsers.email_parser import parse_email
@@ -130,7 +134,8 @@ def process_tnef_attachment(tnef_data, depth, max_depth, container_path):
                             attachment_data,
                             depth + 1,
                             max_depth,
-                            container_path + ["tnef_attachment"]
+                            container_path + ["tnef_attachment"],
+                            stop_recursion=stop_recursion,
                         )
                 
                 # Create attachment info
@@ -270,7 +275,7 @@ def process_attachment(part, depth, max_depth, container_path):
         
         if content_type.lower() == "message/rfc822":
             is_email = True
-            if depth < max_depth:
+            if not stop_recursion and depth < max_depth:
                 logger.debug(f"Found embedded email, recursively parsing at depth {depth+1}")
                 # Import here to avoid circular import
                 from parsers.email_parser import parse_email
@@ -290,7 +295,8 @@ def process_attachment(part, depth, max_depth, container_path):
                         email_content,
                         depth + 1,
                         max_depth,
-                        container_path + ["attachment"]
+                        container_path + ["attachment"],
+                        stop_recursion=stop_recursion,
                     )
                 else:
                     # Use the raw content if not a list
@@ -298,7 +304,8 @@ def process_attachment(part, depth, max_depth, container_path):
                         content,
                         depth + 1,
                         max_depth,
-                        container_path + ["attachment"]
+                        container_path + ["attachment"],
+                        stop_recursion=stop_recursion,
                     )
             else:
                 logger.warning(f"Maximum recursion depth ({max_depth}) reached, not parsing embedded email")

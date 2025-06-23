@@ -3,7 +3,7 @@ from parsers.email_parser import parse_email
 
 logger = logging.getLogger(__name__)
 
-def parse_eml(eml_content, max_depth=10):
+def parse_eml(eml_content, max_depth=10, stop_recursion=False):
     """
     Parse an .eml file and extract email information.
     
@@ -22,7 +22,11 @@ def parse_eml(eml_content, max_depth=10):
             eml_content = eml_content.encode('utf-8', errors='replace')
         
         # Use the main email parser to parse the EML content
-        parsed_data = parse_email(eml_content, max_depth=max_depth)
+        parsed_data = parse_email(
+            eml_content,
+            max_depth=max_depth,
+            stop_recursion=stop_recursion,
+        )
         
         return parsed_data
         
