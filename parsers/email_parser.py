@@ -311,17 +311,38 @@ def parse_email(
         return {"error": f"Failed to parse email: {str(e)}"}
 
 def is_forwarded_email(msg, body_data=None) -> bool:
-    """
-    Check if the email is a forwarded email based on various indicators.
-    More precise to avoid false positives from email signatures.
-    
+    """Check whether the message looks like a forwarded email.
+
+    The detection heuristics look at subject/body patterns but ignore
+    emails that clearly carry another email as an attachment. This helps
+    avoid misclassifying "carrier" emails (where the original email is
+    attached rather than inline) as forwarded messages.
+
     Args:
-        msg: Email message object
-        body_data: Body data if already extracted
-        
+        msg: Email message object.
+        body_data: Optional body data already extracted.
+
     Returns:
-        bool: True if it's a forwarded email, False otherwise
+        bool: ``True`` if heuristics indicate a forwarded email, ``False``
+        otherwise.
     """
+    # If the message includes an attached email, treat it as a carrier
+    # message rather than an inline forward.
+    for part in msg.walk():
+        if part.get_content_maintype() == "multipart":
+            continue
+
+        filename = part.get_filename() or ""
+        content_type = part.get_content_type().lower()
+
+        if (
+            filename.lower().endswith((".eml", ".msg"))
+            or content_type == "message/rfc822"
+        ):
+            logger.debug(
+                "Email contains attached email; skipping forwarded detection"
+            )
+            return False
     # Check subject for forwarding indicators
     subject = msg.get('Subject', '')
     if subject and (subject.lower().startswith(('fw:', 'fwd:')) or 'forwarded' in subject.lower()):
