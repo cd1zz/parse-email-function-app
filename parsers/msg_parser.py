@@ -81,7 +81,12 @@ def convert_msg_to_eml(ole):
     if ole.exists('__substg1.0_0E04001E'):  # To
         recipient = ole.openstream('__substg1.0_0E04001E').read().decode('utf-8', errors='replace')
         eml_parts.append(f"To: {recipient}")
-    
+
+    # Message-ID
+    if ole.exists('__substg1.0_1035001E'):
+        message_id = ole.openstream('__substg1.0_1035001E').read().decode('utf-8', errors='replace')
+        eml_parts.append(f"Message-ID: {message_id}")
+
     if ole.exists('__substg1.0_0042001E'):  # In-Reply-To
         in_reply_to = ole.openstream('__substg1.0_0042001E').read().decode('utf-8', errors='replace')
         eml_parts.append(f"In-Reply-To: {in_reply_to}")
