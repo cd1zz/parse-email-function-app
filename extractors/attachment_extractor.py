@@ -274,42 +274,64 @@ def process_attachment(part, depth, max_depth, container_path, stop_recursion=Fa
         is_email = False
         parsed_email = None
         
-        if content_type.lower() == "message/rfc822":
+        if (
+            content_type.lower() == "message/rfc822"
+            or filename.lower().endswith(".eml")
+            or filename.lower().endswith(".msg")
+            or content_type.lower() in {
+                "application/vnd.ms-outlook",
+                "application/msoutlook",
+                "application/x-msg",
+            }
+        ):
             is_email = True
             if not stop_recursion and depth < max_depth:
-                logger.debug(f"Found embedded email, recursively parsing at depth {depth+1}")
+                logger.debug(
+                    f"Found embedded email, recursively parsing at depth {depth+1}"
+                )
                 # Import here to avoid circular import
-                from parsers.email_parser import parse_email
-                
-                # For embedded emails, get the payload (which should be a list with the message)
-                # Need to handle different ways message/rfc822 can be structured
-                if isinstance(part.get_payload(), list) and len(part.get_payload()) > 0:
-                    embedded_msg = part.get_payload()[0]
-                    # Convert to string if it's an EmailMessage
-                    if hasattr(embedded_msg, 'as_string'):
-                        email_content = embedded_msg.as_string()
-                    else:
-                        # Otherwise use the raw content
-                        email_content = content
-                        
-                    parsed_email = parse_email(
-                        email_content,
-                        depth + 1,
-                        max_depth,
-                        container_path + ["attachment"],
+                if filename.lower().endswith(".msg") or content_type.lower() in {
+                    "application/vnd.ms-outlook",
+                    "application/msoutlook",
+                    "application/x-msg",
+                }:
+                    from parsers.msg_parser import parse_msg
+                    parsed_email = parse_msg(
+                        content,
+                        max_depth=max_depth,
+                        depth=depth + 1,
+                        container_path=container_path + ["attachment"],
                         stop_recursion=stop_recursion,
                     )
                 else:
-                    # Use the raw content if not a list
-                    parsed_email = parse_email(
-                        content,
-                        depth + 1,
-                        max_depth,
-                        container_path + ["attachment"],
-                        stop_recursion=stop_recursion,
-                    )
+                    from parsers.email_parser import parse_email
+
+                    # For embedded emails, get the payload (which should be a list with the message)
+                    if isinstance(part.get_payload(), list) and len(part.get_payload()) > 0:
+                        embedded_msg = part.get_payload()[0]
+                        if hasattr(embedded_msg, "as_string"):
+                            email_content = embedded_msg.as_string()
+                        else:
+                            email_content = content
+                        parsed_email = parse_email(
+                            email_content,
+                            depth + 1,
+                            max_depth,
+                            container_path + ["attachment"],
+                            stop_recursion=stop_recursion,
+                        )
+                    else:
+                        parsed_email = parse_email(
+                            content,
+                            depth + 1,
+                            max_depth,
+                            container_path + ["attachment"],
+                            stop_recursion=stop_recursion,
+                        )
             else:
-                logger.warning(f"Maximum recursion depth ({max_depth}) reached, not parsing embedded email")
+                logger.warning(
+                    f"Maximum recursion depth ({max_depth}) reached, not parsing embedded email"
+                )
         
         # Extract text from attachment for indexing
         attachment_text = ""
