@@ -112,12 +112,20 @@ def convert_msg_to_eml(ole):
     elif ole.exists('__substg1.0_1013001E'):  # HTML body
         body = ole.openstream('__substg1.0_1013001E').read().decode('utf-8', errors='replace')
         content_type = "text/html; charset=utf-8"
-    elif ole.exists('__substg1.0_10130102'):  # Alternate HTML body
+    elif ole.exists('__substg1.0_10130102'):  # Compressed HTML body
         try:
-            body = ole.openstream('__substg1.0_10130102').read().decode('utf-8', errors='replace')
+            compressed = ole.openstream('__substg1.0_10130102').read()
+            try:
+                from utils.rtf_converter import _decompress_lzfu
+                decompressed = _decompress_lzfu(compressed)
+            except Exception as decomp_err:  # pragma: no cover - fallback path
+                logger.warning(f"Failed to decompress HTML body: {decomp_err}")
+                decompressed = compressed
+
+            body = decompressed.decode('utf-8', errors='replace')
             content_type = "text/html; charset=utf-8"
         except Exception as e:
-            logger.warning(f"Failed to decode alternate HTML body: {e}")
+            logger.warning(f"Failed to decode compressed HTML body: {e}")
     elif ole.exists('__substg1.0_10090102'):  # RTF body
         rtf_data = ole.openstream('__substg1.0_10090102').read()
         body = rtf_to_text(rtf_data)
