@@ -40,3 +40,19 @@ def test_rfc822_attachment_recurses_to_inner():
     content = result['email_content']
     assert content['subject'] == 'Inner'
     assert len(content['attachments']) == 0
+
+
+def test_skip_forwarded_check_when_from_rfc822():
+    inner_body = "-----Original Message-----\nFake forwarded text"
+    inner = build_simple_email('Inner', inner_body)
+
+    outer = build_simple_email('Outer', 'outer body')
+    outer.add_attachment(inner.as_bytes(), maintype='message', subtype='rfc822')
+
+    result = parse_email(outer.as_bytes())
+
+    assert result.get('extraction_source') == 'rfc822_attachment'
+    content = result['email_content']
+    assert content['subject'] == 'Inner'
+    assert content['reconstruction_method'] == 'direct'
+    assert 'forwarded' not in content.get('container_path', [])
