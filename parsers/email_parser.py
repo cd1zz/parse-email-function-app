@@ -174,7 +174,7 @@ def parse_email(
                                 depth + 1,
                                 max_depth,
                                 container_path + ["message/rfc822"],
-                                stop_recursion=True,
+                                stop_recursion=stop_recursion,
                             )
 
                             if embedded_email and "error" not in embedded_email:

@@ -25,7 +25,7 @@ def build_simple_email(subject, body):
     return msg
 
 
-def test_rfc822_attachment_stops_recursion():
+def test_rfc822_attachment_recurses_to_inner():
     inner = build_simple_email('Inner', 'inner body')
 
     middle = build_simple_email('Middle', 'middle body')
@@ -38,8 +38,5 @@ def test_rfc822_attachment_stops_recursion():
 
     assert result.get('extraction_source') == 'rfc822_attachment'
     content = result['email_content']
-    assert content['subject'] == 'Middle'
-    assert len(content['attachments']) == 1
-    attachment = content['attachments'][0]
-    assert attachment['is_email'] is True
-    assert 'parsed_email' not in attachment
+    assert content['subject'] == 'Inner'
+    assert len(content['attachments']) == 0

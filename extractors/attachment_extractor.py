@@ -39,13 +39,13 @@ def extract_attachments(msg, depth=0, max_depth=10, container_path=None, stop_re
                     
                 # Check if it's an attachment
                 if is_attachment(part):
-                    attachment = process_attachment(part, depth, max_depth, container_path)
+                    attachment = process_attachment(part, depth, max_depth, container_path, stop_recursion)
                     if attachment:
                         attachments.append(attachment)
         
         # Handle single part message with attachment
         elif is_attachment(msg):
-            attachment = process_attachment(msg, depth, max_depth, container_path)
+            attachment = process_attachment(msg, depth, max_depth, container_path, stop_recursion)
             if attachment:
                 attachments.append(attachment)
         
@@ -230,7 +230,7 @@ def get_filename(part):
     
     return ""
 
-def process_attachment(part, depth, max_depth, container_path):
+def process_attachment(part, depth, max_depth, container_path, stop_recursion=False):
     """
     Process an attachment part and extract relevant information.
     
@@ -239,6 +239,7 @@ def process_attachment(part, depth, max_depth, container_path):
         depth (int): Current recursion depth
         max_depth (int): Maximum recursion depth
         container_path (list): Path of containers
+        stop_recursion (bool): If True, do not recursively parse embedded emails
         
     Returns:
         dict: Attachment information dictionary or None if it's an image
