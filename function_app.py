@@ -22,7 +22,11 @@ def parse_email_functionapp(req: func.HttpRequest) -> func.HttpResponse:
     
     Args:
         req (func.HttpRequest): HTTP request object
-        
+
+    Query Parameters:
+        max_depth (int): Maximum recursion depth. Defaults to 10.
+        stop_recursion (bool): If "true", disable recursive parsing. Defaults to False.
+
     Returns:
         func.HttpResponse: HTTP response with original email data in JSON format
     """
@@ -52,18 +56,27 @@ def parse_email_functionapp(req: func.HttpRequest) -> func.HttpResponse:
         
         # Get max depth parameter (default to 10)
         max_depth = 10
+        params = {}
         try:
             params = req.params
             if "max_depth" in params:
                 max_depth = int(params["max_depth"])
-        except (ValueError, TypeError):
+        except (ValueError, TypeError, AttributeError):
             pass
         
+        # Determine whether to stop recursion (default False)
+        stop_recursion = False
+        try:
+            if params and "stop_recursion" in params:
+                stop_recursion = str(params["stop_recursion"]).lower() == "true"
+        except Exception:
+            pass
+
         # Parse the email - returns the original email data
         parsed_data = parse_email(
             email_content,
             max_depth=max_depth,
-            stop_recursion=True,
+            stop_recursion=stop_recursion,
         )
         
         # Return the parsed data as JSON
