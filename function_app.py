@@ -60,7 +60,11 @@ def parse_email_functionapp(req: func.HttpRequest) -> func.HttpResponse:
             pass
         
         # Parse the email - returns the original email data
-        parsed_data = parse_email(email_content, max_depth=max_depth)
+        parsed_data = parse_email(
+            email_content,
+            max_depth=max_depth,
+            stop_recursion=True,
+        )
         
         # Return the parsed data as JSON
         return func.HttpResponse(
