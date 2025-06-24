@@ -152,6 +152,7 @@ def parse_email(
         # Initialize extraction status to track if we found an embedded email
         extracted_email_found = False
         extracted_email_data = None
+        attachments_found = False
         
         # PRIORITY 1: Check if this is a Proofpoint-reported email (special case)
         if is_proofpoint_email(msg):
@@ -163,6 +164,7 @@ def parse_email(
         if msg.is_multipart():
             for part in msg.walk():
                 if part.get_content_type() == 'message/rfc822':
+                    attachments_found = True
                     logger.info("Found message/rfc822 attachment")
                     try:
                         # Extract the embedded message
@@ -193,6 +195,7 @@ def parse_email(
         if not extracted_email_found:
             for part in msg.walk():
                 if part.get_content_type() == 'application/ms-tnef':
+                    attachments_found = True
                     logger.info("Found TNEF attachment")
                     try:
                         # Try to import tnefparse if available
@@ -226,6 +229,7 @@ def parse_email(
                 
                 filename = part.get_filename() or ""
                 if filename.lower().endswith(('.eml', '.msg')):
+                    attachments_found = True
                     logger.info(f"Found email file attachment: {filename}")
                     attachment_data = part.get_payload(decode=True)
                     if attachment_data:
@@ -263,6 +267,7 @@ def parse_email(
             )
             # Filter out None values (image attachments will be None)
             attachments = [attachment for attachment in attachments if attachment is not None]
+            attachments_found = attachments_found or bool(attachments)
             
             # Process any email attachments recursively
             for i, attachment in enumerate(attachments):
@@ -284,7 +289,11 @@ def parse_email(
                         break
         
         # PRIORITY 6: Check if this is a forwarded email
-        if not extracted_email_found:
+        if (
+            not extracted_email_found
+            and not attachments_found
+            and "message/rfc822" not in container_path
+        ):
             # Extract body content for forwarded email check
             body_data = extract_body(msg)
             
