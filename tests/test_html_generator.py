@@ -11,3 +11,11 @@ def test_create_html_simple():
     assert '<html' in html.lower()
     assert 'PHISHING' in html
 
+
+def test_create_html_classification():
+    data = {'decision': {'classification': 'SPAM', 'score': 2}}
+    html = create_html(data)
+    assert '<html' in html.lower()
+    assert 'SPAM' in html
+    assert 'category-tag' in html
+
