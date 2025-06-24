@@ -99,6 +99,8 @@ def extract_body(msg):
         # Use the UrlExtractor to extract URLs from the HTML content
         urls = UrlExtractor.extract_urls_from_html(html_content)
         result["extracted_urls"] = urls
+        # Preserve the raw HTML so other functions can parse it
+        result["html"] = html_content
     
     return result
 
