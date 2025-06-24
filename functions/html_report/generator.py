@@ -59,7 +59,7 @@ def create_html(json_data):
                     <div style="margin-left: {{ indent * 20 }}px;">
                         <span class="json-key">{{ key | replace('_', ' ') | title }}:</span>
                         
-                        {% if key|lower == 'category' and value is string %}
+                        {% if key|lower in ['category', 'classification'] and value is string %}
                             <span class="category-tag" style="{{ category_styles.get(value|upper, category_styles['DEFAULT']) }}">
                                 {{ value|upper if value else 'N/A' }}
                             </span>
