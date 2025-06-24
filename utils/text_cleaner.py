@@ -84,3 +84,22 @@ def clean_excessive_newlines(text: str) -> str:
     # Replace multiple consecutive newlines (2 or more) with a single newline
     cleaned_text = re.sub(r'\n{2,}', '\n', text)
     return cleaned_text
+
+def truncate_text(text: str, max_chars: int = 10000) -> str:
+    """Truncate text to a maximum number of characters.
+
+    Args:
+        text: The text to truncate.
+        max_chars: Maximum number of characters to keep.
+
+    Returns:
+        str: Truncated text with "..." appended if truncation occurred.
+    """
+    if not text:
+        return text
+
+    if len(text) > max_chars:
+        logger.debug(f"Truncating text from {len(text)} to {max_chars} characters")
+        return text[:max_chars] + "..."
+
+    return text

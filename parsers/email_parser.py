@@ -15,7 +15,12 @@ from extractors.domain_extractor import extract_domains
 from utils.url_processing import UrlExtractor, UrlProcessor
 
 from utils.email_policy import CustomEmailPolicy
-from utils.text_cleaner import truncate_urls_in_text, clean_excessive_newlines, strip_urls_and_html
+from utils.text_cleaner import (
+    truncate_urls_in_text,
+    clean_excessive_newlines,
+    strip_urls_and_html,
+    truncate_text,
+)
 
 from parsers.proofpoint_parser import is_proofpoint_email, parse_proofpoint_email
 from parsers.forwarded_parser import parse_forwarded_email
@@ -78,8 +83,12 @@ def extract_basic_email_data(
                 "spf": headers["authentication"]["spf"],
                 "dmarc": headers["authentication"]["dmarc"],
             },
-            "body": strip_urls_and_html(
-                truncate_urls_in_text(clean_excessive_newlines(body_text))
+            "body": truncate_text(
+                strip_urls_and_html(
+                    truncate_urls_in_text(
+                        clean_excessive_newlines(body_text)
+                    )
+                )
             ),
             "attachments": attachments,
             "container_path": container_path,
@@ -301,7 +310,13 @@ def parse_email(
                         "reply_to": "",
                         "subject": forwarded_data.get("original_subject", ""),
                         "date": forwarded_data.get("original_date", ""),
-                        "body": strip_urls_and_html(truncate_urls_in_text(clean_excessive_newlines(forwarded_data.get("original_body", "")))),
+                        "body": truncate_text(
+                            strip_urls_and_html(
+                                truncate_urls_in_text(
+                                    clean_excessive_newlines(forwarded_data.get("original_body", ""))
+                                )
+                            )
+                        ),
                         "attachments": [],
                         "container_path": container_path + ["forwarded"],
                         "reconstruction_method": "forwarded",
@@ -385,7 +400,13 @@ def parse_email(
                 "spf": headers["authentication"]["spf"],
                 "dmarc": headers["authentication"]["dmarc"]
             },
-            "body": strip_urls_and_html(truncate_urls_in_text(clean_excessive_newlines(body_data.get("body", "")))),
+            "body": truncate_text(
+                strip_urls_and_html(
+                    truncate_urls_in_text(
+                        clean_excessive_newlines(body_data.get("body", ""))
+                    )
+                )
+            ),
             "attachments": attachments,
             "container_path": container_path,
             "reconstruction_method": "direct",
