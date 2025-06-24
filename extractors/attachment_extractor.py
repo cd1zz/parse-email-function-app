@@ -342,11 +342,21 @@ def process_attachment(part, depth, max_depth, container_path, stop_recursion=Fa
             try:
                 # Import Excel extractor
                 from extractors.excel_extractor import extract_text_from_excel
-                attachment_text = extract_text_from_excel(content)
+
+                excel_result = extract_text_from_excel(content)
+
+                if isinstance(excel_result, dict):
+                    attachment_text = excel_result.get("text", "")
+                    excel_urls = excel_result.get("urls", [])
+                else:
+                    attachment_text = excel_result
+                    excel_urls = []
+
                 logger.debug(f"Extracted {len(attachment_text)} characters of text from Excel")
             except Exception as e:
                 logger.warning(f"Failed to extract Excel text: {str(e)}")
                 attachment_text = f"[Excel Text Extraction Failed: {str(e)}]"
+                excel_urls = []
 
         # Word document handling
         elif content_type in {
@@ -390,6 +400,10 @@ def process_attachment(part, depth, max_depth, container_path, stop_recursion=Fa
             content_type=content_type,
             filename=filename
         )
+
+        # Include URLs returned by the Excel extractor if available
+        if 'excel_urls' in locals() and excel_urls:
+            attachment_urls.extend(excel_urls)
         
         # Extract IP addresses if we have attachment text
         ip_addresses = []
