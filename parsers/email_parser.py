@@ -19,7 +19,6 @@ from utils.text_cleaner import (
     truncate_urls_in_text,
     clean_excessive_newlines,
     strip_urls_and_html,
-    truncate_text,
 )
 
 from parsers.proofpoint_parser import is_proofpoint_email, parse_proofpoint_email
@@ -83,11 +82,9 @@ def extract_basic_email_data(
                 "spf": headers["authentication"]["spf"],
                 "dmarc": headers["authentication"]["dmarc"],
             },
-            "body": truncate_text(
-                strip_urls_and_html(
-                    truncate_urls_in_text(
-                        clean_excessive_newlines(body_text)
-                    )
+            "body": strip_urls_and_html(
+                truncate_urls_in_text(
+                    clean_excessive_newlines(body_text)
                 )
             ),
             "attachments": attachments,
@@ -310,11 +307,9 @@ def parse_email(
                         "reply_to": "",
                         "subject": forwarded_data.get("original_subject", ""),
                         "date": forwarded_data.get("original_date", ""),
-                        "body": truncate_text(
-                            strip_urls_and_html(
-                                truncate_urls_in_text(
-                                    clean_excessive_newlines(forwarded_data.get("original_body", ""))
-                                )
+                        "body": strip_urls_and_html(
+                            truncate_urls_in_text(
+                                clean_excessive_newlines(forwarded_data.get("original_body", ""))
                             )
                         ),
                         "attachments": [],
@@ -400,11 +395,9 @@ def parse_email(
                 "spf": headers["authentication"]["spf"],
                 "dmarc": headers["authentication"]["dmarc"]
             },
-            "body": truncate_text(
-                strip_urls_and_html(
-                    truncate_urls_in_text(
-                        clean_excessive_newlines(body_data.get("body", ""))
-                    )
+            "body": strip_urls_and_html(
+                truncate_urls_in_text(
+                    clean_excessive_newlines(body_data.get("body", ""))
                 )
             ),
             "attachments": attachments,
