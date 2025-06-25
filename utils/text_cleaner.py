@@ -5,14 +5,27 @@ from bs4 import BeautifulSoup
 
 logger = logging.getLogger(__name__)
 
+
+def is_likely_html(text: str) -> bool:
+    """Simple heuristic to determine if text looks like HTML."""
+    if not text:
+        return False
+    if "\x00" in text:
+        return False
+    for c in text[:100]:
+        if ord(c) < 32 and c not in "\n\r\t":
+            return False
+    return True
+
 def strip_urls_and_html(text):
     if not text:
         return text
 
     #logger.debug(f"strip_urls_and_html text before html stripping: {text}")
-    # Remove HTML tags
-    soup = BeautifulSoup(text, "html.parser")
-    text = soup.get_text(separator=" ", strip=True)
+    if is_likely_html(text):
+        # Remove HTML tags
+        soup = BeautifulSoup(text, "html.parser")
+        text = soup.get_text(separator=" ", strip=True)
 
     # Remove raw URLs
     text = re.sub(r"\bhttps?://[\w\-._~:/?#@!$&'()*+,;=%]+", "", text)

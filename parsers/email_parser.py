@@ -52,8 +52,14 @@ def extract_basic_email_data(
         )
         attachments = [a for a in attachments if a is not None]
 
-        all_urls: List[str] = []
+        # Append text from attachments (e.g., parsed .msg) to body text for
+        # downstream processing
         body_text = body_data.get("body", "")
+        for att in attachments:
+            if att.get("attachment_text"):
+                body_text += "\n" + att["attachment_text"]
+
+        all_urls: List[str] = []
         all_urls.extend(UrlExtractor.extract_all_urls_from_email(body_data, body_text))
         all_urls.extend(UrlProcessor.extract_urls_from_attachments(attachments))
         processed_urls = UrlProcessor.process_urls(all_urls)
