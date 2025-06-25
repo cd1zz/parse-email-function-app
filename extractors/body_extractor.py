@@ -29,7 +29,20 @@ def extract_body(msg):
         
         for i, part in enumerate(msg.get_payload()):
             content_type = part.get_content_type().lower()
-            logger.debug(f"Part {i}: Content-Type: {content_type}")
+            filename = part.get_filename() or ""
+            disposition = part.get("Content-Disposition", "").lower()
+            logger.debug(
+                f"Part {i}: Content-Type: {content_type}, "
+                f"filename: {filename}, disposition: {disposition}"
+            )
+
+            # Skip parts that look like attachments even if they claim to be
+            # text/plain or text/html. Some phishing reports incorrectly label
+            # binary attachments (e.g. .msg files) as text which causes binary
+            # data to be parsed as HTML.
+            if filename or "attachment" in disposition:
+                logger.debug(f"Skipping attachment part {i}: {filename}")
+                continue
             
             # Collect text content
             if content_type == "text/plain":
@@ -64,9 +77,16 @@ def extract_body(msg):
     # Handle single part messages
     else:
         content_type = msg.get_content_type().lower()
-        logger.debug(f"Message is single part with content-type: {content_type}")
+        filename = msg.get_filename() or ""
+        disposition = msg.get("Content-Disposition", "").lower()
+        logger.debug(
+            f"Message is single part with content-type: {content_type}, "
+            f"filename: {filename}, disposition: {disposition}"
+        )
 
-        if content_type in ("text/plain", "text/html"):
+        if filename or "attachment" in disposition:
+            logger.debug("Skipping single part attachment content")
+        elif content_type in ("text/plain", "text/html"):
             content = decode_content(msg)
             logger.debug(f"Decoded content length: {len(content)}")
             if len(content) > 0:
