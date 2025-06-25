@@ -10,14 +10,9 @@ def strip_urls_and_html(text):
         return text
 
     #logger.debug(f"strip_urls_and_html text before html stripping: {text}")
-    # Remove HTML tags with robust error handling for malformed content
-    try:
-        soup = BeautifulSoup(text, "html.parser")
-        text = soup.get_text(separator=" ", strip=True)
-    except Exception as e:
-        logger.warning(f"BeautifulSoup failed to parse body text: {e}")
-        # Replace non-printable characters and fall back to raw text
-        text = re.sub(r"[^\x09\x0A\x0D\x20-\x7E]", " ", text)
+    # Remove HTML tags
+    soup = BeautifulSoup(text, "html.parser")
+    text = soup.get_text(separator=" ", strip=True)
 
     # Remove raw URLs
     text = re.sub(r"\bhttps?://[\w\-._~:/?#@!$&'()*+,;=%]+", "", text)
