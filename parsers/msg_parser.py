@@ -4,6 +4,18 @@ import olefile
 from parsers.email_parser import parse_email
 from utils.rtf_converter import rtf_to_text
 
+
+def _read_ole_string(ole, candidates):
+    """Return the first available stream decoded with the provided encoding."""
+    for name, encoding in candidates:
+        if ole.exists(name):
+            try:
+                data = ole.openstream(name).read()
+                return data.decode(encoding, errors="replace")
+            except Exception:  # pragma: no cover - unexpected decode issues
+                return ole.openstream(name).read().decode("utf-8", errors="replace")
+    return None
+
 logger = logging.getLogger(__name__)
 
 def parse_msg(msg_content, max_depth=10, depth=0, container_path=None, stop_recursion=False):
@@ -70,26 +82,58 @@ def convert_msg_to_eml(ole):
     # Initialize an email message
     eml_parts = []
     
-    # Extract headers
-    if ole.exists('__substg1.0_007D001E'):  # Subject
-        subject = ole.openstream('__substg1.0_007D001E').read().decode('utf-8', errors='replace')
+    # Extract headers with UTF-8/UTF-16 fallbacks
+    subject = _read_ole_string(
+        ole,
+        [
+            ('__substg1.0_007D001F', 'utf-16-le'),
+            ('__substg1.0_007D001E', 'utf-8'),
+            ('__substg1.0_0037001F', 'utf-16-le'),
+            ('__substg1.0_0037001E', 'utf-8'),
+        ],
+    )
+    if subject:
         eml_parts.append(f"Subject: {subject}")
-    
-    if ole.exists('__substg1.0_0C1A001E'):  # From
-        sender = ole.openstream('__substg1.0_0C1A001E').read().decode('utf-8', errors='replace')
+
+    sender = _read_ole_string(
+        ole,
+        [
+            ('__substg1.0_0C1A001F', 'utf-16-le'),
+            ('__substg1.0_0C1A001E', 'utf-8'),
+        ],
+    )
+    if sender:
         eml_parts.append(f"From: {sender}")
-    
-    if ole.exists('__substg1.0_0E04001E'):  # To
-        recipient = ole.openstream('__substg1.0_0E04001E').read().decode('utf-8', errors='replace')
+
+    recipient = _read_ole_string(
+        ole,
+        [
+            ('__substg1.0_0E04001F', 'utf-16-le'),
+            ('__substg1.0_0E04001E', 'utf-8'),
+        ],
+    )
+    if recipient:
         eml_parts.append(f"To: {recipient}")
 
     # Message-ID
-    if ole.exists('__substg1.0_1035001E'):
-        message_id = ole.openstream('__substg1.0_1035001E').read().decode('utf-8', errors='replace')
+    message_id = _read_ole_string(
+        ole,
+        [
+            ('__substg1.0_1035001F', 'utf-16-le'),
+            ('__substg1.0_1035001E', 'utf-8'),
+        ],
+    )
+    if message_id:
         eml_parts.append(f"Message-ID: {message_id}")
 
-    if ole.exists('__substg1.0_0042001E'):  # In-Reply-To
-        in_reply_to = ole.openstream('__substg1.0_0042001E').read().decode('utf-8', errors='replace')
+    in_reply_to = _read_ole_string(
+        ole,
+        [
+            ('__substg1.0_0042001F', 'utf-16-le'),
+            ('__substg1.0_0042001E', 'utf-8'),
+        ],
+    )
+    if in_reply_to:
         eml_parts.append(f"In-Reply-To: {in_reply_to}")
     
     # Extract date
@@ -107,10 +151,24 @@ def convert_msg_to_eml(ole):
     # Extract body
     body = ""
     content_type = "text/plain; charset=utf-8"
-    if ole.exists('__substg1.0_1000001E'):  # Plain text body
-        body = ole.openstream('__substg1.0_1000001E').read().decode('utf-8', errors='replace')
-    elif ole.exists('__substg1.0_1013001E'):  # HTML body
-        body = ole.openstream('__substg1.0_1013001E').read().decode('utf-8', errors='replace')
+    body = _read_ole_string(
+        ole,
+        [
+            ('__substg1.0_1000001F', 'utf-16-le'),
+            ('__substg1.0_1000001E', 'utf-8'),
+        ],
+    ) or ""
+
+    html_body = _read_ole_string(
+        ole,
+        [
+            ('__substg1.0_1013001F', 'utf-16-le'),
+            ('__substg1.0_1013001E', 'utf-8'),
+        ],
+    )
+
+    if html_body:
+        body = html_body
         content_type = "text/html; charset=utf-8"
     elif ole.exists('__substg1.0_10130102'):  # Compressed HTML body
         try:
