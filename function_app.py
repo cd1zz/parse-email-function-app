@@ -72,7 +72,7 @@ def parse_email_functionapp(req: func.HttpRequest) -> func.HttpResponse:
         except Exception:
             pass
 
-        first_email_only = False
+        first_email_only = True
         try:
             if params and "first_email_only" in params:
                 first_email_only = str(params["first_email_only"]).lower() == "true"
