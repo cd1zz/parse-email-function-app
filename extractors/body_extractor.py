@@ -65,15 +65,19 @@ def extract_body(msg):
     else:
         content_type = msg.get_content_type().lower()
         logger.debug(f"Message is single part with content-type: {content_type}")
-        content = decode_content(msg)
-        logger.debug(f"Decoded content length: {len(content)}")
-        if len(content) > 0:
-            logger.debug(f"First 100 chars: {content[:100]}")
-        
-        if content_type == "text/plain":
-            plain_content = content
-        elif content_type == "text/html":
-            html_content = content
+
+        if content_type in ("text/plain", "text/html"):
+            content = decode_content(msg)
+            logger.debug(f"Decoded content length: {len(content)}")
+            if len(content) > 0:
+                logger.debug(f"First 100 chars: {content[:100]}")
+
+            if content_type == "text/plain":
+                plain_content = content
+            else:
+                html_content = content
+        else:
+            logger.debug("Skipping non-text single part content")
     
     # Create result dictionary with both plain text and HTML content
     result = {}

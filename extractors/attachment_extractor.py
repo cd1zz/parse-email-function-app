@@ -463,6 +463,18 @@ def process_attachment(part, depth, max_depth, container_path, stop_recursion=Fa
         
         if parsed_email:
             attachment["parsed_email"] = parsed_email
+            # If we successfully parsed an email, try to use its body as
+            # attachment_text when none was extracted above.
+            body_text = ""
+            if isinstance(parsed_email, dict):
+                if "email_content" in parsed_email and isinstance(
+                    parsed_email["email_content"], dict
+                ):
+                    body_text = parsed_email["email_content"].get("body", "")
+                else:
+                    body_text = parsed_email.get("body", "")
+            if body_text and not attachment_text:
+                attachment["attachment_text"] = body_text
         
         return attachment
         
