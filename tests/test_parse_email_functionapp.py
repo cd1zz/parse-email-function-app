@@ -67,7 +67,10 @@ def test_http_endpoint_recurses_rfc822():
     assert resp.status_code == 200
 
     data = json.loads(resp.get_body())
-    assert data.get('extraction_source') == 'rfc822_attachment'
-    content = data['email_content']
-    assert content['subject'] == 'Inner'
-    assert len(content['attachments']) == 0
+    carrier = data.get('carrier_email')
+    target = data.get('target_email')
+
+    assert carrier['subject'] == 'Outer'
+    assert target['email_content']['subject'] == 'Middle'
+    inner = target['email_content']['attachments'][0]['parsed_email']['email_content']
+    assert inner['subject'] == 'Inner'

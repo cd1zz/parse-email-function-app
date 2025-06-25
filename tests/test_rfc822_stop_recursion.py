@@ -34,9 +34,8 @@ def test_rfc822_attachment_recurses_to_inner():
     outer = build_simple_email('Outer', 'outer body')
     outer.add_attachment(middle.as_bytes(), maintype='message', subtype='rfc822')
 
-    result = parse_email(outer.as_bytes())
+    result = parse_email(outer.as_bytes(), first_email_only=True)
 
-    assert result.get('extraction_source') == 'rfc822_attachment'
     content = result['email_content']
     assert content['subject'] == 'Inner'
     assert len(content['attachments']) == 0
@@ -49,10 +48,22 @@ def test_skip_forwarded_check_when_from_rfc822():
     outer = build_simple_email('Outer', 'outer body')
     outer.add_attachment(inner.as_bytes(), maintype='message', subtype='rfc822')
 
-    result = parse_email(outer.as_bytes())
+    result = parse_email(outer.as_bytes(), first_email_only=True)
 
-    assert result.get('extraction_source') == 'rfc822_attachment'
     content = result['email_content']
     assert content['subject'] == 'Inner'
     assert content['reconstruction_method'] == 'direct'
     assert 'forwarded' not in content.get('container_path', [])
+
+
+def test_default_returns_carrier_and_target():
+    inner = build_simple_email('Inner', 'body')
+    outer = build_simple_email('Outer', 'outer body')
+    outer.add_attachment(inner.as_bytes(), maintype='message', subtype='rfc822')
+
+    result = parse_email(outer.as_bytes())
+
+    carrier = result['carrier_email']
+    target = result['target_email']
+    assert carrier['subject'] == 'Outer'
+    assert target['email_content']['subject'] == 'Inner'
