@@ -72,11 +72,19 @@ def parse_email_functionapp(req: func.HttpRequest) -> func.HttpResponse:
         except Exception:
             pass
 
+        first_email_only = False
+        try:
+            if params and "first_email_only" in params:
+                first_email_only = str(params["first_email_only"]).lower() == "true"
+        except Exception:
+            pass
+
         # Parse the email - returns the original email data
         parsed_data = parse_email(
             email_content,
             max_depth=max_depth,
             stop_recursion=stop_recursion,
+            first_email_only=first_email_only,
         )
         
         # Return the parsed data as JSON

@@ -114,6 +114,7 @@ def parse_email(
     max_depth: int = 10,
     container_path: Optional[List[str]] = None,
     stop_recursion: bool = False,
+    first_email_only: bool = False,
 ) -> Dict[str, Any]:
     """
     Main function to parse an email with recursive unwrapping to find original email.
@@ -124,7 +125,9 @@ def parse_email(
         depth: Current recursion depth
         max_depth: Maximum recursion depth to prevent infinite loops
         container_path: Path of containers (how this email was contained)
-        
+        first_email_only: If True, stop after extracting the first embedded
+            email and treat outer content as a carrier.
+
     Returns:
         dict: Original email data only, without debug/progress information
     """
@@ -159,6 +162,56 @@ def parse_email(
         extracted_email_found = False
         extracted_email_data = None
         attachments_found = False
+
+        # Special handling when only the first embedded email should be used
+        if first_email_only and depth == 0:
+            attachments = extract_attachments(
+                msg, depth, max_depth, container_path, stop_recursion=stop_recursion
+            )
+            attachments = [a for a in attachments if a is not None]
+
+            for att in attachments:
+                if att.get("is_email") and "parsed_email" in att:
+                    inner = att["parsed_email"]
+                    if isinstance(inner, dict) and "email_content" in inner:
+                        email_data = inner["email_content"]
+                    else:
+                        email_data = inner
+                    # Append remaining attachments from the carrier
+                    extra_atts = [a for a in attachments if a is not att]
+                    email_data.setdefault("attachments", []).extend(extra_atts)
+                    if "email_content" in inner:
+                        inner["email_content"] = email_data
+                        return inner
+                    return {"email_content": email_data}
+
+            if is_forwarded_email(msg):
+                forwarded_data = parse_forwarded_email(
+                    msg, depth + 1, max_depth, container_path + ["forwarded"]
+                )
+                if forwarded_data and not is_empty_email_data(forwarded_data):
+                    forwarded_email = {
+                        "message_id": "",
+                        "sender": forwarded_data.get("original_sender", ""),
+                        "return_path": "",
+                        "receiver": forwarded_data.get("original_recipient", ""),
+                        "reply_to": "",
+                        "subject": forwarded_data.get("original_subject", ""),
+                        "date": forwarded_data.get("original_date", ""),
+                        "body": strip_urls_and_html(
+                            truncate_urls_in_text(
+                                clean_excessive_newlines(forwarded_data.get("original_body", ""))
+                            )
+                        ),
+                        "attachments": attachments,
+                        "container_path": container_path + ["forwarded"],
+                        "reconstruction_method": "forwarded",
+                        "urls": forwarded_data.get("urls", []),
+                        "ip_addresses": forwarded_data.get("ip_addresses", []),
+                        "domains": forwarded_data.get("domains", []),
+                    }
+                    return {"email_content": forwarded_email}
+
         
         # PRIORITY 1: Check if this is a Proofpoint-reported email (special case)
         if is_proofpoint_email(msg):
