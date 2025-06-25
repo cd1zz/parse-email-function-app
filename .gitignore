@@ -18,3 +18,4 @@ __pycache__/
 *.pem
 
 .python_packages/
+parse-email-function-app.zip
