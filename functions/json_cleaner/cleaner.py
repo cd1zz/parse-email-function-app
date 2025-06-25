@@ -5,8 +5,8 @@ import azure.functions as func
 
 logger = logging.getLogger(__name__)
 
-# Set up logging configuration
-logging.basicConfig(level=logging.DEBUG)
+# In the Azure Functions environment the host configures logging. Avoid
+# overriding it here so we simply obtain a module level logger.
 
 def remove_markdown_notation(input_string):
     logger.debug("Starting markdown notation removal.")

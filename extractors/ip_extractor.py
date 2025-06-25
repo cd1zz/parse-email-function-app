@@ -72,10 +72,17 @@ def is_valid_ipv4(ip):
             return False
     
     # Skip local/private IP addresses if needed
-    if (ip.startswith('127.') or
-         ip.startswith('10.') or
-         ip.startswith('172.16.') or
-         ip.startswith('192.168.')):
-         return False
+    if (
+        ip.startswith("127.")
+        or ip.startswith("10.")
+        or ip.startswith("192.168.")
+    ):
+        return False
+
+    # Cover the entire 172.16.0.0/12 private range (172.16.0.0 - 172.31.255.255)
+    if ip.startswith("172."):
+        second_octet = int(octets[1])
+        if 16 <= second_octet <= 31:
+            return False
     
     return True
