@@ -26,6 +26,7 @@ def parse_email_functionapp(req: func.HttpRequest) -> func.HttpResponse:
     Query Parameters:
         max_depth (int): Maximum recursion depth. Defaults to 10.
         stop_recursion (bool): If "true", disable recursive parsing. Defaults to False.
+        first_email_only (bool): If "true", only return the first parsed email. Defaults to True.
 
     Returns:
         func.HttpResponse: HTTP response with original email data in JSON format
